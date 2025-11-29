@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetAnalyze - Network Analysis Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gray: {
+                            950: '#0a0a0a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-950">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Icon Component Wrapper
+        const Icon = ({ name, className = "h-5 w-5" }) => {
+            useEffect(() => {
+                lucide.createIcons();
+            }, []);
+            return React.createElement('i', {
+                'data-lucide': name,
+                className: className
+            });
+        };
+
+        // Sidebar Component
+        const Sidebar = ({ currentPage, onNavigate }) => {
+            const navItems = [
+                { id: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
+                { id: 'traffic', icon: 'activity', label: 'Traffic Insights' },
+                { id: 'security', icon: 'shield-alert', label: 'Security Alerts' },
+                { id: 'uploader', icon: 'upload', label: 'Syslog Uploader' },
+                { id: 'settings', icon: 'settings', label: 'Settings' },
+            ];
+
+            return (
+                <div className="w-64 bg-gray-900 h-screen fixed left-0 top-0 border-r border-gray-800">
+                    {/* Logo/Title */}
+                    <div className="p-6 border-b border-gray-800">
+                        <div className="flex items-center gap-3">
+                            <Icon name="globe" className="h-8 w-8 text-blue-500" />
+                            <h1 className="text-2xl font-bold text-gray-100">NetAnalyze</h1>
+                        </div>
+                    </div>
+
+                    {/* Navigation Links */}
+                    <nav className="p-4">
+                        <ul className="space-y-2">
+                            {navItems.map(item => (
+                                <li key={item.id}>
+                                    <button
+                                        onClick={() => onNavigate(item.id)}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                                            currentPage === item.id
+                                                ? 'bg-blue-600 text-white'
+                                                : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+                                        }`}
+                                    >
+                                        <Icon name={item.icon} className="h-5 w-5" />
+                                        <span className="font-medium">{item.label}</span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+                </div>
+            );
+        };
+
+        // Header Component
+        const Header = ({ title }) => {
+            return (
+                <div className="bg-gray-900 border-b border-gray-800 p-4 mb-6">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-bold text-gray-100">{title}</h2>
+                        <div className="flex items-center gap-4">
+                            <Icon name="user-circle" className="h-8 w-8 text-gray-400 hover:text-gray-200 cursor-pointer" />
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Summary Card Component
+        const SummaryCard = ({ icon, title, value, trend }) => {
+            return (
+                <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-blue-600 transition-colors">
+                    <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-3 bg-blue-600 bg-opacity-20 rounded-lg">
+                                    <Icon name={icon} className="h-6 w-6 text-blue-400" />
+                                </div>
+                                <h3 className="text-gray-400 text-sm font-medium">{title}</h3>
+                            </div>
+                            <p className="text-3xl font-bold text-gray-100">{value}</p>
+                            {trend && (
+                                <p className="text-sm text-green-400 mt-2">{trend}</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Security Alert Feed Component
+        const SecurityAlertFeed = () => {
+            const alerts = [
+                {
+                    id: 1,
+                    severity: 'high',
+                    icon: 'alert-triangle',
+                    title: 'Unusual Traffic Pattern Detected',
+                    description: 'Spike in outbound connections from 192.168.1.45',
+                    time: '2 minutes ago',
+                    color: 'red'
+                },
+                {
+                    id: 2,
+                    severity: 'medium',
+                    icon: 'alert-circle',
+                    title: 'Failed Authentication Attempts',
+                    description: 'Multiple failed SSH login attempts detected',
+                    time: '15 minutes ago',
+                    color: 'yellow'
+                },
+                {
+                    id: 3,
+                    severity: 'low',
+                    icon: 'info',
+                    title: 'Certificate Expiring Soon',
+                    description: 'SSL certificate expires in 14 days',
+                    time: '1 hour ago',
+                    color: 'blue'
+                },
+                {
+                    id: 4,
+                    severity: 'high',
+                    icon: 'shield-alert',
+                    title: 'Port Scan Detected',
+                    description: 'Sequential port scanning from external IP',
+                    time: '2 hours ago',
+                    color: 'red'
+                },
+                {
+                    id: 5,
+                    severity: 'medium',
+                    icon: 'alert-circle',
+                    title: 'Bandwidth Threshold Exceeded',
+                    description: 'Network utilization above 85%',
+                    time: '3 hours ago',
+                    color: 'yellow'
+                }
+            ];
+
+            const severityColors = {
+                red: 'border-red-500 bg-red-500 bg-opacity-10',
+                yellow: 'border-yellow-500 bg-yellow-500 bg-opacity-10',
+                blue: 'border-blue-500 bg-blue-500 bg-opacity-10'
+            };
+
+            const iconColors = {
+                red: 'text-red-400',
+                yellow: 'text-yellow-400',
+                blue: 'text-blue-400'
+            };
+
+            return (
+                <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <Icon name="shield-alert" className="h-6 w-6 text-blue-400" />
+                        <h3 className="text-xl font-bold text-gray-100">Security Alert Feed</h3>
+                    </div>
+                    <div className="space-y-3">
+                        {alerts.map(alert => (
+                            <div
+                                key={alert.id}
+                                className={`border-l-4 ${severityColors[alert.color]} p-4 rounded-r-lg`}
+                            >
+                                <div className="flex items-start gap-3">
+                                    <Icon name={alert.icon} className={`h-5 w-5 ${iconColors[alert.color]} flex-shrink-0 mt-1`} />
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="text-gray-100 font-semibold text-sm mb-1">{alert.title}</h4>
+                                        <p className="text-gray-400 text-xs mb-2">{alert.description}</p>
+                                        <span className="text-gray-500 text-xs">{alert.time}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // Network Topology Map Component
+        const NetworkTopologyMap = () => {
+            return (
+                <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <Icon name="network" className="h-6 w-6 text-blue-400" />
+                        <h3 className="text-lg font-bold text-gray-100">Network Health</h3>
+                    </div>
+                    <div className="relative h-64 flex items-center justify-center">
+                        <svg className="w-full h-full" viewBox="0 0 300 200">
+                            {/* Connection lines */}
+                            <line x1="150" y1="100" x2="75" y2="50" stroke="#3b82f6" strokeWidth="2" opacity="0.5" />
+                            <line x1="150" y1="100" x2="225" y2="50" stroke="#3b82f6" strokeWidth="2" opacity="0.5" />
+                            
+                            {/* Central node */}
+                            <circle cx="150" cy="100" r="25" fill="#1e40af" stroke="#3b82f6" strokeWidth="3" />
+                            <text x="150" y="105" textAnchor="middle" fill="#e5e7eb" fontSize="12" fontWeight="bold">Core</text>
+                            
+                            {/* Peripheral nodes */}
+                            <circle cx="75" cy="50" r="20" fill="#065f46" stroke="#10b981" strokeWidth="2" />
+                            <text x="75" y="55" textAnchor="middle" fill="#e5e7eb" fontSize="10">Node 1</text>
+                            
+                            <circle cx="225" cy="50" r="20" fill="#065f46" stroke="#10b981" strokeWidth="2" />
+                            <text x="225" y="55" textAnchor="middle" fill="#e5e7eb" fontSize="10">Node 2</text>
+                        </svg>
+                    </div>
+                    <div className="mt-4 flex items-center justify-center gap-6 text-xs">
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                            <span className="text-gray-400">Healthy</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                            <span className="text-gray-400">Active</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Dashboard Page
+        const DashboardPage = () => {
+            return (
+                <div>
+                    <Header title="Dashboard Overview" />
+                    <div className="p-6 space-y-6">
+                        {/* Row 1: Performance Overview */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <SummaryCard
+                                icon="activity"
+                                title="Real-Time Traffic Load"
+                                value="1,234 Mbps"
+                                trend="↑ 12% from last hour"
+                            />
+                            <SummaryCard
+                                icon="link"
+                                title="Active Connections"
+                                value="2,345"
+                                trend="↓ 3% from last hour"
+                            />
+                        </div>
+
+                        {/* Row 2: Security Alerts & Topology */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="lg:col-span-2">
+                                <SecurityAlertFeed />
+                            </div>
+                            <div className="lg:col-span-1">
+                                <NetworkTopologyMap />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Traffic Insights Page
+        const TrafficInsightsPage = () => {
+            return (
+                <div>
+                    <Header title="Traffic Insights" />
+                    <div className="p-6">
+                        <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 text-center">
+                            <Icon name="activity" className="h-16 w-16 text-blue-400 mx-auto mb-4" />
+                            <h3 className="text-xl font-bold text-gray-100 mb-2">Traffic Insights</h3>
+                            <p className="text-gray-400">Detailed traffic analysis and insights will be displayed here.</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Security Alerts Page
+        const SecurityAlertsPage = () => {
+            return (
+                <div>
+                    <Header title="Security Alerts" />
+                    <div className="p-6">
+                        <SecurityAlertFeed />
+                    </div>
+                </div>
+            );
+        };
+
+        // Syslog Uploader Page
+        const SyslogUploaderPage = () => {
+            const [files, setFiles] = useState([]);
+            const [isDragging, setIsDragging] = useState(false);
+
+            const handleDragOver = (e) => {
+                e.preventDefault();
+                setIsDragging(true);
+            };
+
+            const handleDragLeave = () => {
+                setIsDragging(false);
+            };
+
+            const handleDrop = (e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                const droppedFiles = Array.from(e.dataTransfer.files);
+                setFiles([...files, ...droppedFiles]);
+            };
+
+            const handleFileInput = (e) => {
+                const selectedFiles = Array.from(e.target.files);
+                setFiles([...files, ...selectedFiles]);
+            };
+
+            const removeFile = (index) => {
+                setFiles(files.filter((_, i) => i !== index));
+            };
+
+            return (
+                <div>
+                    <Header title="Syslog Uploader" />
+                    <div className="p-6">
+                        <div className="max-w-4xl mx-auto">
+                            {/* Upload Area */}
+                            <div
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
+                                    isDragging
+                                        ? 'border-blue-500 bg-blue-500 bg-opacity-10'
+                                        : 'border-gray-700 bg-gray-900'
+                                }`}
+                            >
+                                <Icon name="upload-cloud" className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                                <h3 className="text-xl font-bold text-gray-100 mb-2">Upload Syslog Files</h3>
+                                <p className="text-gray-400 mb-6">Drag and drop files here, or click to browse</p>
+                                <label className="inline-block">
+                                    <input
+                                        type="file"
+                                        multiple
+                                        onChange={handleFileInput}
+                                        className="hidden"
+                                        accept=".log,.txt"
+                                    />
+                                    <span className="px-6 py-3 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition-colors inline-block">
+                                        Browse Files
+                                    </span>
+                                </label>
+                            </div>
+
+                            {/* File List */}
+                            {files.length > 0 && (
+                                <div className="mt-6 bg-gray-900 border border-gray-800 rounded-lg p-6">
+                                    <h4 className="text-lg font-bold text-gray-100 mb-4">Uploaded Files ({files.length})</h4>
+                                    <div className="space-y-3">
+                                        {files.map((file, index) => (
+                                            <div key={index} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                                                <div className="flex items-center gap-3">
+                                                    <Icon name="file-text" className="h-5 w-5 text-blue-400" />
+                                                    <div>
+                                                        <p className="text-gray-100 font-medium">{file.name}</p>
+                                                        <p className="text-gray-400 text-sm">{(file.size / 1024).toFixed(2)} KB</p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => removeFile(index)}
+                                                    className="p-2 text-red-400 hover:bg-red-500 hover:bg-opacity-20 rounded-lg transition-colors"
+                                                >
+                                                    <Icon name="x" className="h-5 w-5" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <button className="w-full mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                                        Process Files
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Settings Page
+        const SettingsPage = () => {
+            const [apiEndpoint, setApiEndpoint] = useState('https://api.openai.com/v1');
+            const [apiKey, setApiKey] = useState('');
+            const [model, setModel] = useState('gpt-4');
+            const [showKey, setShowKey] = useState(false);
+
+            return (
+                <div>
+                    <Header title="LLM API Settings" />
+                    <div className="p-6">
+                        <div className="max-w-2xl mx-auto">
+                            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <Icon name="settings" className="h-6 w-6 text-blue-400" />
+                                    <h3 className="text-xl font-bold text-gray-100">LLM Configuration</h3>
+                                </div>
+
+                                <div className="space-y-6">
+                                    {/* API Endpoint */}
+                                    <div>
+                                        <label className="block text-gray-300 font-medium mb-2">API Endpoint</label>
+                                        <input
+                                            type="text"
+                                            value={apiEndpoint}
+                                            onChange={(e) => setApiEndpoint(e.target.value)}
+                                            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:border-blue-500 transition-colors"
+                                            placeholder="https://api.openai.com/v1"
+                                        />
+                                    </div>
+
+                                    {/* API Key */}
+                                    <div>
+                                        <label className="block text-gray-300 font-medium mb-2">API Key</label>
+                                        <div className="relative">
+                                            <input
+                                                type={showKey ? 'text' : 'password'}
+                                                value={apiKey}
+                                                onChange={(e) => setApiKey(e.target.value)}
+                                                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:border-blue-500 transition-colors pr-12"
+                                                placeholder="sk-..."
+                                            />
+                                            <button
+                                                onClick={() => setShowKey(!showKey)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                                            >
+                                                <Icon name={showKey ? 'eye-off' : 'eye'} className="h-5 w-5" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Model Selection */}
+                                    <div>
+                                        <label className="block text-gray-300 font-medium mb-2">Model</label>
+                                        <select
+                                            value={model}
+                                            onChange={(e) => setModel(e.target.value)}
+                                            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:border-blue-500 transition-colors"
+                                        >
+                                            <option value="gpt-4">GPT-4</option>
+                                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                            <option value="claude-3-opus">Claude 3 Opus</option>
+                                            <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="flex gap-4 pt-4">
+                                        <button className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                                            Save Configuration
+                                        </button>
+                                        <button className="px-6 py-3 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors font-medium border border-gray-700">
+                                            Test Connection
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Main App Component
+        const App = () => {
+            const [currentPage, setCurrentPage] = useState('dashboard');
+
+            useEffect(() => {
+                lucide.createIcons();
+            }, [currentPage]);
+
+            const renderPage = () => {
+                switch (currentPage) {
+                    case 'dashboard':
+                        return <DashboardPage />;
+                    case 'traffic':
+                        return <TrafficInsightsPage />;
+                    case 'security':
+                        return <SecurityAlertsPage />;
+                    case 'uploader':
+                        return <SyslogUploaderPage />;
+                    case 'settings':
+                        return <SettingsPage />;
+                    default:
+                        return <DashboardPage />;
+                }
+            };
+
+            return (
+                <div className="flex min-h-screen bg-gray-950">
+                    <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+                    <div className="ml-64 flex-1">
+                        {renderPage()}
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
