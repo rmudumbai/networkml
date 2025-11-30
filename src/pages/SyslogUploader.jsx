@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Header from '../components/layout/Header'
 import { UploadCloud, FileText, X } from 'lucide-react'
-import { uploadToGCS } from '../services/storage'
+import apiService from '../services/api'
 
 const SyslogUploader = () => {
     const [files, setFiles] = useState([])
@@ -44,18 +44,23 @@ const SyslogUploader = () => {
         setUploadStatus('Uploading files...')
 
         try {
-            // Upload each file to GCS
+            const uploadResults = []
+
+            // Upload each file to backend
             for (const file of files) {
-                await uploadToGCS(file)
+                const result = await apiService.uploadSyslogFile(file)
+                uploadResults.push(result)
             }
-            setUploadStatus(`Successfully uploaded ${files.length} file(s)`)
+
+            setUploadStatus(`Successfully uploaded ${uploadResults.length} file(s) to GCS`)
+            console.log('Upload results:', uploadResults)
             setFiles([])
 
             // Clear status after 3 seconds
             setTimeout(() => setUploadStatus(''), 3000)
         } catch (error) {
             console.error('Upload error:', error)
-            setUploadStatus('Upload failed. Please check your GCP configuration.')
+            setUploadStatus(`Upload failed: ${error.message}. Please check your GCP configuration.`)
         } finally {
             setUploading(false)
         }

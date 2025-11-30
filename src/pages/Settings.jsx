@@ -3,6 +3,7 @@ import Header from '../components/layout/Header'
 import { Settings as SettingsIcon, Eye, EyeOff } from 'lucide-react'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '../config/firebase'
+import apiService from '../services/api'
 
 const Settings = () => {
     const [apiEndpoint, setApiEndpoint] = useState('https://api.openai.com/v1')
@@ -33,18 +34,19 @@ const Settings = () => {
 
     const handleSave = async () => {
         try {
-            const settingsCollection = import.meta.env.VITE_FIRESTORE_SETTINGS_COLLECTION || 'settings'
-            await setDoc(doc(db, settingsCollection, 'llm-config'), {
+            const result = await apiService.saveLLMSettings({
                 apiEndpoint,
                 apiKey,
-                model,
-                updatedAt: new Date().toISOString()
+                model
             })
-            setSaveStatus('Configuration saved successfully!')
+
+            setSaveStatus(result.message || 'Configuration saved successfully!')
+            console.log('Settings saved with document ID:', result.documentId)
             setTimeout(() => setSaveStatus(''), 3000)
         } catch (error) {
             console.error('Error saving settings:', error)
-            setSaveStatus('Failed to save configuration. Check console for details.')
+            setSaveStatus(`Failed to save: ${error.message}`)
+            setTimeout(() => setSaveStatus(''), 5000)
         }
     }
 
