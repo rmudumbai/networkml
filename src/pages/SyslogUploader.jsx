@@ -72,8 +72,8 @@ const SyslogUploader = () => {
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                         className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${isDragging
-                                ? 'border-blue-500 bg-blue-500 bg-opacity-10'
-                                : 'border-gray-700 bg-gray-900'
+                            ? 'border-blue-500 bg-blue-500 bg-opacity-10'
+                            : 'border-gray-700 bg-gray-900'
                             }`}
                     >
                         <UploadCloud className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -103,15 +103,20 @@ const SyslogUploader = () => {
                     {/* File List */}
                     {files.length > 0 && (
                         <div className="mt-6 bg-gray-900 border border-gray-800 rounded-lg p-6">
-                            <h4 className="text-lg font-bold text-gray-100 mb-4">Uploaded Files ({files.length})</h4>
+                            <h4 className="text-lg font-bold text-gray-100 mb-4">File Status List ({files.length})</h4>
                             <div className="space-y-3">
                                 {files.map((file, index) => (
                                     <div key={index} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-3 flex-1">
                                             <FileText className="h-5 w-5 text-blue-400" />
-                                            <div>
+                                            <div className="flex-1">
                                                 <p className="text-gray-100 font-medium">{file.name}</p>
-                                                <p className="text-gray-400 text-sm">{(file.size / 1024).toFixed(2)} KB</p>
+                                                <div className="flex items-center gap-4 mt-1">
+                                                    <p className="text-gray-400 text-sm">{(file.size / 1024).toFixed(2)} KB</p>
+                                                    <span className="text-xs px-2 py-1 rounded bg-blue-500 bg-opacity-20 text-blue-400">
+                                                        {uploading ? 'Processing...' : 'Ready'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                         <button

@@ -110,15 +110,17 @@ const Settings = () => {
 
                             {/* Model Selection */}
                             <div>
-                                <label className="block text-gray-300 font-medium mb-2">Model</label>
+                                <label className="block text-gray-300 font-medium mb-2">Model Selection</label>
                                 <select
                                     value={model}
                                     onChange={(e) => setModel(e.target.value)}
                                     className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:border-blue-500 transition-colors"
                                 >
-                                    <option value="gpt-4">GPT-4</option>
+                                    <option value="gpt-4o">GPT-4o</option>
                                     <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                    <option value="gpt-4">GPT-4</option>
                                     <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                    <option value="gemini-2.5-pro">Gemini-2.5-Pro</option>
                                     <option value="claude-3-opus">Claude 3 Opus</option>
                                     <option value="claude-3-sonnet">Claude 3 Sonnet</option>
                                 </select>
